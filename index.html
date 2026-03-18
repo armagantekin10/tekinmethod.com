@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tekin Method — Service Distortion Diagnostic</title>
+<meta name="description" content="Independent Salesforce Service Cloud audit. Find where your metrics diverge from reality.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #5F5E5A;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.8rem;
+    line-height: 1.15;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+  }
+  h1 em {
+    font-style: italic;
+    color: #0F6E56;
+  }
+  .lead {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #444441;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+  .divider {
+    height: 1px;
+    background: #D3D1C7;
+    margin: 2.5rem 0;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #888780;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Service grid */
+  .what-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  @media (max-width: 480px) {
+    .what-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 2rem; }
+    .tier-grid { grid-template-columns: 1fr !important; }
+  }
+  .what-item {
+    padding: 1.25rem;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 8px;
+  }
+  .what-item .num {
+    font-size: 11px;
+    font-weight: 500;
+    color: #0F6E56;
+    margin-bottom: .5rem;
+    letter-spacing: .08em;
+  }
+  .what-item p {
+    font-size: .9rem;
+    color: #444441;
+    line-height: 1.65;
+  }
+
+  /* Two-tier pricing */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .tier-card {
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+  }
+  .tier-card.entry {
+    background: #F1EFE8;
+  }
+  .tier-card.professional {
+    background: #0F6E56;
+    color: #fff;
+  }
+  .tier-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: .7;
+  }
+  .tier-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    margin-bottom: .5rem;
+  }
+  .tier-price {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    margin-bottom: .75rem;
+  }
+  .tier-price .from {
+    font-family: 'DM Sans', sans-serif;
+    font-size: .8rem;
+    font-weight: 300;
+  }
+  .tier-desc {
+    font-size: .85rem;
+    line-height: 1.65;
+    opacity: .85;
+  }
+  .tier-list {
+    margin-top: 1rem;
+    font-size: .82rem;
+    line-height: 1.8;
+  }
+  .tier-list span {
+    display: block;
+  }
+  .tier-card.professional .tier-list span::before {
+    content: "— ";
+    opacity: .5;
+  }
+  .tier-card.entry .tier-list span::before {
+    content: "— ";
+    opacity: .4;
+  }
+  .launch-note {
+    font-size: .8rem;
+    color: #888780;
+    margin-bottom: 2.5rem;
+    padding: .75rem 0;
+    border-top: 0.5px solid #D3D1C7;
+  }
+  .launch-note strong {
+    color: #0F6E56;
+    font-weight: 500;
+  }
+
+  /* Free tools banner */
+  .free-banner {
+    background: #FAFAF7;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+  .free-banner p {
+    font-size: .9rem;
+    color: #444441;
+    line-height: 1.65;
+    margin-bottom: .75rem;
+  }
+  .free-banner a {
+    font-size: .85rem;
+    color: #0F6E56;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid #9FE1CB;
+    padding-bottom: 1px;
+  }
+  .free-banner a:hover { color: #085041; border-color: #085041; }
+
+  /* For section */
+  .for-block { margin-bottom: 2.5rem; }
+  .for-item {
+    display: flex;
+    gap: .75rem;
+    padding: .75rem 0;
+    border-bottom: 0.5px solid #D3D1C7;
+    font-size: .9rem;
+    color: #444441;
+    line-height: 1.6;
+  }
+  .for-item:last-child { border-bottom: none; }
+  .check { color: #0F6E56; font-weight: 500; flex-shrink: 0; }
+
+  /* Bio */
+  .bio {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 12px;
+    margin-bottom: 2.5rem;
+  }
+  .bio-init {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #E1F5EE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 14px;
+    color: #0F6E56;
+    flex-shrink: 0;
+  }
+  .bio-name { font-weight: 500; font-size: .95rem; color: #1a1a1a; margin-bottom: .25rem; }
+  .bio-title { font-size: .82rem; color: #5F5E5A; margin-bottom: .5rem; }
+  .bio-text { font-size: .85rem; color: #444441; line-height: 1.65; }
+
+  /* CTA */
+  .cta-block { text-align: center; padding: 2rem 0; }
+  .cta-email {
+    font-size: 1rem;
+    color: #0F6E56;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid #9FE1CB;
+    padding-bottom: 2px;
+  }
+  .cta-email:hover { color: #085041; border-color: #085041; }
+  .cta-sub { font-size: .82rem; color: #888780; margin-top: .75rem; }
+
+  /* Footer */
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 0.5px solid #D3D1C7;
+    font-size: .78rem;
+    color: #888780;
+    display: flex;
+    justify-content: space-between;
+  }
+  .footer a { color: #888780; text-decoration: none; }
+  .footer a:hover { color: #5F5E5A; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="tag">Tekin Method &nbsp;·&nbsp; Independent Diagnostic</div>
+
+  <h1>Most CRM problems are not<br>technical problems.<br>They are <em>structural ones.</em></h1>
+
+  <p class="lead">Your Salesforce system doesn't lie. It reflects how your organization actually works, not how it thinks it works. I read those signals and tell you what they mean.</p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">The Service</div>
+
+  <div class="what-grid">
+    <div class="what-item">
+      <div class="num">01 &nbsp;DIAGNOSTIC</div>
+      <p>Independent Salesforce Service Distortion Audit. No implementation. No upsell pressure. Just findings.</p>
+    </div>
+    <div class="what-item">
+      <div class="num">02 &nbsp;DELIVERY</div>
+      <p>Written report + executive briefing. Async-first, 5 business days.</p>
+    </div>
+    <div class="what-item">
+      <div class="num">03 &nbsp;OUTPUT</div>
+      <p>Service Distortion Index + Pattern Analysis + Friction Map. Structured for the boardroom.</p>
+    </div>
+    <div class="what-item">
+      <div class="num">04 &nbsp;SCOPE</div>
+      <p>Incentive alignment, signal integrity, governance clarity, behaviour distortion. Eight pattern analysis.</p>
+    </div>
+  </div>
+
+  <div class="section-label">Pricing</div>
+
+  <div class="tier-grid">
+    <div class="tier-card entry">
+      <div class="tier-tag">Self-service</div>
+      <div class="tier-name">Pattern Report</div>
+      <div class="tier-price">$49</div>
+      <div class="tier-desc">Automated distortion pattern analysis based on your assessment answers.</div>
+      <div class="tier-list">
+        <span>Risk classification</span>
+        <span>Pattern identification</span>
+        <span>PDF report via email</span>
+        <span>Delivered in 24 hours</span>
+      </div>
+    </div>
+    <div class="tier-card professional">
+      <div class="tier-tag">Full diagnostic</div>
+      <div class="tier-name">Professional Diagnostic</div>
+      <div class="tier-price"><span class="from">from </span>€1,500</div>
+      <div class="tier-desc">Salesforce data analysis + structured interviews + full pattern mapping.</div>
+      <div class="tier-list">
+        <span>Service Distortion Index</span>
+        <span>Full 8-pattern analysis</span>
+        <span>Executive summary + report</span>
+        <span>5 business days, async</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="launch-note"><strong>Launch pricing</strong> available for the first engagements. Final pricing is scoped to your organization's size and complexity.</div>
+
+  <div class="section-label">Start free</div>
+
+  <div class="free-banner">
+    <p>Not sure if you have a problem? Try one of the free diagnostic tools. Five focused assessments, zero commitment.</p>
+    <a href="https://chatgpt.com/g/g-69b83118038081918f3613355cfa160d-service-distortion-diagnostic" target="_blank">Try the Service Distortion Diagnostic &rarr;</a>
+  </div>
+
+  <div class="section-label">For</div>
+
+  <div class="for-block">
+    <div class="for-item"><span class="check">&mdash;</span><span>Head of Customer Experience or VP Customer Service who suspects something isn't working but can't name it</span></div>
+    <div class="for-item"><span class="check">&mdash;</span><span>Mid-market companies (200+ employees) running Salesforce Service Cloud</span></div>
+    <div class="for-item"><span class="check">&mdash;</span><span>Leaders receiving service metrics that feel too clean</span></div>
+    <div class="for-item"><span class="check">&mdash;</span><span>Post Series B/C organizations scaling customer operations</span></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">About</div>
+
+  <div class="bio">
+    <div class="bio-init">AT</div>
+    <div>
+      <div class="bio-name">Armagan Tekin</div>
+      <div class="bio-title">Independent Salesforce Service Cloud Auditor &middot; 8+ years &middot; 12 certifications</div>
+      <div class="bio-text">Platform Data Architect, Sharing &amp; Visibility Architect, Service Cloud Consultant. Enterprise experience across e-commerce, FMCG, aviation. I work independently. No firm, no agenda, no implementation revenue. The diagnostic is the product.</div>
+    </div>
+  </div>
+
+  <div class="cta-block">
+    <div class="section-label" style="margin-bottom:.75rem;">Contact</div>
+    <a class="cta-email" href="/cdn-cgi/l/email-protection#35415d505850415d5a51755447585452545b41505e5c5b1b565a58"><span class="__cf_email__" data-cfemail="63170b060e06170b0c072302110e0204020d1706080a0d4d000c0e">[email&#160;protected]</span></a>
+    <div class="cta-sub">linkedin.com/in/armagantekin</div>
+  </div>
+
+  <div class="foot
